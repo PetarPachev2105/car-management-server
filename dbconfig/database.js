@@ -1,7 +1,7 @@
 import Knex from 'knex';
 import { Model } from 'objection';
 import knexConfig from './knexfile';
-import Logger from '../lib/logger';
+import Logger from '../lib/Logger';
 
 const logger = new Logger(__filename);
 

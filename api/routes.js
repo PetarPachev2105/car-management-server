@@ -4,7 +4,7 @@ import MaintenanceRoutes from './maintenance/maintenance.routes';
 import GarageRoutes from './garage/garage.routes';
 import CarRoutes from './car/car.routes';
 
-import Logger from '../lib/logger';
+import Logger from '../lib/Logger';
 
 const logger = new Logger(__filename);
 
@@ -19,9 +19,16 @@ router.use('/cars', CarRoutes);
 
 /* Add our own error handler */
 router.use((err, req, res, next) => {
-    logger.error(`Express caught unknown error => ${err} => ${err.name} => ${err.message} `);
-    logger.warn(`Express caught unknown error => ${err.statusCode} => ${err.message} => ${err.stack}`);
-    res.status(500).send('Something went wrong');
+    if (err.name === 'HyundaiAccentError') {
+        /* A HyundaiAccentError was thrown. So just sent the status and message to the client as it's "safe" and won't leak information */
+        logger.warn(`Express caught HyundaiAccentError => ${err.statusCode} => ${err.message} `);
+        res.status(err.statusCode).send({ message: err.message });
+    } else {
+        /* For any other error - send a generic error to ensure that we don't leak information */
+        logger.error(`Express caught unknown error => ${err} => ${err.message} `);
+        logger.warn(`Express caught unknown error => ${err.statusCode} => ${err.message} => ${err.stack}`);
+        res.status(500).send('Something went wrong');
+    }
 });
 
 export default router;
