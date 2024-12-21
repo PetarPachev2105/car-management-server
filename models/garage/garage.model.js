@@ -1,5 +1,8 @@
 import { Model } from 'objection';
 
+/* Relationship models */
+import Maintenance from '../maintenance/maintenance.model';
+
 export default class Garage extends Model {
     static tableName = 'garage';
 
@@ -19,4 +22,17 @@ export default class Garage extends Model {
             capacity: { type: 'number' },
         },
     };
+
+    static get relationMappings() {
+        return {
+            maintenances: {
+                relation: Model.HasManyRelation,
+                modelClass: Maintenance,
+                join: {
+                    from: 'garage.id',
+                    to: 'maintenance.garage_id',
+                },
+            },
+        };
+    }
 }

@@ -1,5 +1,9 @@
 import { Model } from 'objection';
 
+/* Relationship models */
+import Car from '../car/car.model';
+import Garage from '../garage/garage.model';
+
 export default class Maintenance extends Model {
     static tableName = 'maintenance';
 
@@ -19,4 +23,25 @@ export default class Maintenance extends Model {
             scheduled_date: { type: 'timestamp' },
         },
     };
+
+    static get relationMappings() {
+        return {
+            car: {
+                relation: Model.HasOneRelation,
+                modelClass: Car,
+                join: {
+                    from: 'maintenance.car_id',
+                    to: 'car.id',
+                },
+            },
+            garage: {
+                relation: Model.HasOneRelation,
+                modelClass: Garage,
+                join: {
+                    from: 'maintenance.garage',
+                    to: 'garage.id',
+                },
+            },
+        };
+    }
 }

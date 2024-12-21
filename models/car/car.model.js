@@ -1,5 +1,8 @@
 import { Model } from 'objection';
 
+/* Relationship models */
+import Maintenance from '../maintenance/maintenance.model';
+
 export default class Car extends Model {
     static tableName = 'car';
 
@@ -19,4 +22,17 @@ export default class Car extends Model {
             licence_plate: { type: 'string' },
         },
     };
+
+    static get relationMappings() {
+        return {
+            maintenances: {
+                relation: Model.HasManyRelation,
+                modelClass: Maintenance,
+                join: {
+                    from: 'car.id',
+                    to: 'maintenance.car_id',
+                },
+            },
+        };
+    }
 }
