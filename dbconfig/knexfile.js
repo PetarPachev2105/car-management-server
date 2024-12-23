@@ -7,6 +7,11 @@ dotenv.config();
 /** Lucky for you, I know the solution */
 /** Go to package.json and add -> "type": "module", */
 /** Remember to remove it after you are done */
+
+/** Next step is to comment out this line */
+// dotenv.config({ 'path': '../.env' });
+/** Comment it after you are done */
+
 /** You are welcome */
 
 /**
