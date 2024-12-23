@@ -6,7 +6,7 @@ import cors from 'cors';
 import bodyParser from 'body-parser';
 import routes from './api/routes';
 
-dotenv.config();
+dotenv.config({ path: './.env' });
 
 const logger = new Logger(__filename);
 

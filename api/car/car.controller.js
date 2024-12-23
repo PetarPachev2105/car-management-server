@@ -1,5 +1,13 @@
 import _ from 'lodash';
+import asyncJS from 'async';
 import httpStatus from 'http-status';
+
+/* Main Service */
+import CarService from '../../models/car/car.service';
+
+/* Additional Services */
+import CarGarageEntryService from '../../models/carGarageEntry/carGarageEntry.service';
+import GarageService from '../../models/garage/garage.service';
 
 /* Custom Errors */
 import { HyundaiAccentError, HyundaiAccentErrorTypes, ERROR_MESSAGES } from '../../config/hyundaiAccentError';
@@ -22,11 +30,22 @@ async function getCar(req, res) {
         throw new HyundaiAccentError(HyundaiAccentErrorTypes.MISSING_INPUTS, ERROR_MESSAGES.BAD_REQUEST);
     }
 
-    // TODO: Check if exists
+    const car = await CarService.getCar(req.params.carId);
 
+    if (!car) {
+        logger.error(`getCar NOT FOUND with ID ${req.params.carId}`);
+        throw new HyundaiAccentError(HyundaiAccentErrorTypes.NOT_FOUND, ERROR_MESSAGES.RESOURCE_NOT_FOUND);
+    }
 
-    res.status(httpStatus.HTTP_STATUS_OK);
-    res.json({});
+    const carGarageEntries = await CarGarageEntryService.getCarGarages(car.id);
+    const garageIds = carGarageEntries.map(entry => entry.garageId);
+
+    const garages = await GarageService.getGarages(garageIds);
+
+    const formattedCar = CarService.formatCarForAPIExport(car, garages);
+
+    res.status(httpStatus.OK);
+    res.json(formattedCar);
 }
 
 /**
@@ -52,8 +71,41 @@ async function searchCars(req, res) {
         throw new HyundaiAccentError(HyundaiAccentErrorTypes.BAD_INPUTS, ERROR_MESSAGES.BAD_REQUEST);
     }
 
-    res.status(httpStatus.HTTP_STATUS_OK);
-    res.json({});
+    const cars = await CarService.searchCars(cleanedQuery.carMake, cleanedQuery.garageId, cleanedQuery.fromYear, cleanedQuery.toYear);
+
+    /* Store all garages we retrieved so far */
+    const garagesLUT = {};
+
+    const formattedCars = [];
+
+    /* Loop through all cars and set their garages for the api export */
+    await asyncJS.eachSeries(cars, async (car, eachCarCallback) => {
+        const carGarageEntries = await CarGarageEntryService.getCarGarages(car.id);
+
+        const missingGarageIds = carGarageEntries.map(entry => entry.garageId).filter(garageId => !garagesLUT[garageId]);
+
+        /* Find all missing garages and set it to the look-up table */
+        /* This way we won't retrieve the same garage one million times */
+        if (missingGarageIds.length > 0) {
+            const missingGarages = await GarageService.getGarages(missingGarageIds);
+
+
+            missingGarages.forEach((missingGarage) => {
+                garagesLUT[missingGarage.id] = missingGarage;
+            });
+
+            const carGarages = carGarageEntries.map(entry => garagesLUT[entry.garageId]);
+
+            const formattedCar = CarService.formatCarForAPIExport(car, carGarages);
+
+            formattedCars.push(formattedCar);
+        }
+
+        return eachCarCallback(null);
+    });
+
+    res.status(httpStatus.OK);
+    res.json(formattedCars);
 }
 
 /**
@@ -79,8 +131,21 @@ async function createCar(req, res) {
         throw new HyundaiAccentError(HyundaiAccentErrorTypes.BAD_INPUTS, ERROR_MESSAGES.BAD_REQUEST);
     }
 
-    res.status(httpStatus.HTTP_STATUS_OK);
-    res.json({});
+    const garageIds = cleanedPayload.garageIds;
+
+    const garages = await GarageService.getGarages(garageIds);
+
+    if (garages.length !== garageIds.length) {
+        logger.error(`createCar CALLED with invalid garage ids ${JSON.stringify(req.body)}`);
+        throw new HyundaiAccentError(HyundaiAccentErrorTypes.BAD_INPUTS, ERROR_MESSAGES.BAD_REQUEST);
+    }
+
+    const car = await CarService.createCar(cleanedPayload.make, cleanedPayload.model, cleanedPayload.productionYear, cleanedPayload.licensePlate, garageIds);
+
+    const formattedCar = CarService.formatCarForAPIExport(car, garages);
+
+    res.status(httpStatus.OK);
+    res.json(formattedCar);
 }
 
 /**
@@ -90,7 +155,12 @@ async function createCar(req, res) {
  * @returns {Promise<void>}
  */
 async function updateCar(req, res) {
-    logger.info(`updateCar CALLED with ${req.params.carId} and ${JSON.stringify(req.body)}`);
+    logger.info(`updateCar CALLED with ${JSON.stringify(req.params)} and ${JSON.stringify(req.body)}`);
+
+    if (!req.params || req.params.carId === undefined) {
+        logger.error(`updateCar CALLED with invalid car ID - ${req.params.carId}`);
+        throw new HyundaiAccentError(HyundaiAccentErrorTypes.MISSING_INPUTS, ERROR_MESSAGES.BAD_REQUEST);
+    }
 
     if (!req.body) {
         logger.error(`updateCar CALLED with no body - ${req.body}`);
@@ -106,10 +176,28 @@ async function updateCar(req, res) {
         throw new HyundaiAccentError(HyundaiAccentErrorTypes.BAD_INPUTS, ERROR_MESSAGES.BAD_REQUEST);
     }
 
-    // TODO: Check if exist
+    const carExists = await CarService.checkIfCarExists(req.params.carId);
 
-    res.status(httpStatus.HTTP_STATUS_OK);
-    res.json({});
+    if (!carExists) {
+        logger.error(`updateCar NOT FOUND with ID ${req.params.carId}`);
+        throw new HyundaiAccentError(HyundaiAccentErrorTypes.NOT_FOUND, ERROR_MESSAGES.RESOURCE_NOT_FOUND);
+    }
+
+    const garageIds = cleanedPayload.garageIds;
+
+    const garages = await GarageService.getGarages(garageIds);
+
+    if (garages.length !== garageIds.length) {
+        logger.error(`createCar CALLED with invalid garage ids ${JSON.stringify(req.body)}`);
+        throw new HyundaiAccentError(HyundaiAccentErrorTypes.BAD_INPUTS, ERROR_MESSAGES.BAD_REQUEST);
+    }
+
+    const car = await CarService.updateCar(req.params.carId, cleanedPayload.make, cleanedPayload.model, cleanedPayload.productionYear, cleanedPayload.licensePlate, garageIds);
+
+    const formattedCar = CarService.formatCarForAPIExport(car, garages);
+
+    res.status(httpStatus.OK);
+    res.json(formattedCar);
 }
 
 /**
@@ -126,10 +214,17 @@ async function deleteCar(req, res) {
         throw new HyundaiAccentError(HyundaiAccentErrorTypes.MISSING_INPUTS, ERROR_MESSAGES.BAD_REQUEST);
     }
 
-    // TODO: Check if exists
+    const carExists = await CarService.checkIfCarExists(req.params.carId);
 
-    res.status(httpStatus.HTTP_STATUS_OK);
-    res.json({});
+    if (!carExists) {
+        logger.error(`updateCar NOT FOUND with ID ${req.params.carId}`);
+        throw new HyundaiAccentError(HyundaiAccentErrorTypes.NOT_FOUND, ERROR_MESSAGES.RESOURCE_NOT_FOUND);
+    }
+
+    await CarService.deleteCar(req.params.carId);
+
+    res.status(httpStatus.OK);
+    res.json(true);
 }
 
 export default {

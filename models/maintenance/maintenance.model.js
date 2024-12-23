@@ -9,7 +9,7 @@ export default class Maintenance extends Model {
 
     static jsonSchema = {
         type: 'object',
-        required: ['id', 'car_id', 'garage_id', 'service_type', 'scheduled_date'],
+        required: ['car_id', 'garage_id', 'service_type', 'scheduled_date'],
 
         properties: {
             id: { type: 'number' },
@@ -20,13 +20,13 @@ export default class Maintenance extends Model {
 
             service_type: { type: 'string' },
 
-            scheduled_date: { type: 'timestamp' },
+            scheduled_date: { type: 'string', format: 'date-time' },
         },
     };
 
     static get relationMappings() {
         return {
-            car: {
+            maintenanceCar: {
                 relation: Model.HasOneRelation,
                 modelClass: Car,
                 join: {
@@ -34,11 +34,11 @@ export default class Maintenance extends Model {
                     to: 'car.id',
                 },
             },
-            garage: {
+            maintenanceGarage: {
                 relation: Model.HasOneRelation,
                 modelClass: Garage,
                 join: {
-                    from: 'maintenance.garage',
+                    from: 'maintenance.garage_id',
                     to: 'garage.id',
                 },
             },

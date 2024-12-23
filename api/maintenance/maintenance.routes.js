@@ -6,16 +6,16 @@ const router = Router();
 
 /** GETS */
 router
-    .route('/:maintenanceId')
-    .get(MaintenanceController.getMaintenance)
+    .route('/monthlyRequestsReport')
+    .get(MaintenanceController.monthlyRequestsReport)
 
 router
     .route('/')
     .get(MaintenanceController.searchMaintenance)
 
 router
-    .route('/monthlyRequestsReport')
-    .get(MaintenanceController.monthlyRequestsReport)
+    .route('/:maintenanceId')
+    .get(MaintenanceController.getMaintenance)
 
 /** POSTS */
 router

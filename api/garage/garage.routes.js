@@ -6,16 +6,16 @@ const router = Router();
 
 /** GETS */
 router
+    .route('/dailyAvailabilityReport')
+    .get(GarageController.dailyAvailabilityReport)
+
+router
     .route('/:garageId')
     .get(GarageController.getGarage)
 
 router
     .route('/')
     .get(GarageController.searchGarages)
-
-router
-    .route('/dailyAvailabilityReport')
-    .get(GarageController.dailyAvailabilityReport)
 
 /** POST */
 router

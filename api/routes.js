@@ -19,6 +19,7 @@ router.use('/cars', CarRoutes);
 
 /* Add our own error handler */
 router.use((err, req, res, next) => {
+    console.log(err);
     if (err.name === 'HyundaiAccentError') {
         /* A HyundaiAccentError was thrown. So just sent the status and message to the client as it's "safe" and won't leak information */
         logger.warn(`Express caught HyundaiAccentError => ${err.statusCode} => ${err.message} `);

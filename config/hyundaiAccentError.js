@@ -27,10 +27,9 @@ export class HyundaiAccentError extends Error {
  * @type {{MISSING_INPUTS: number, BAD_INPUTS: number, NOT_FOUND: number, GENERAL: number}}
  */
 export const HyundaiAccentErrorTypes = {
-    MISSING_INPUTS: httpStatus.HTTP_STATUS_BAD_REQUEST,
-    BAD_INPUTS: httpStatus.HTTP_STATUS_BAD_REQUEST,
-    GENERAL: httpStatus.HTTP_STATUS_INTERNAL_SERVER_ERROR,
-    NOT_FOUND: httpStatus.HTTP_STATUS_NOT_FOUND,
+    MISSING_INPUTS: httpStatus.BAD_REQUEST,
+    BAD_INPUTS: httpStatus.BAD_REQUEST,
+    NOT_FOUND: httpStatus.NOT_FOUND,
 };
 
 /**

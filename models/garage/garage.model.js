@@ -2,13 +2,14 @@ import { Model } from 'objection';
 
 /* Relationship models */
 import Maintenance from '../maintenance/maintenance.model';
+import CarGarageEntry from '../carGarageEntry/carGarageEntry.model';
 
 export default class Garage extends Model {
     static tableName = 'garage';
 
     static jsonSchema = {
         type: 'object',
-        required: ['id', 'name', 'location', 'city', 'capacity'],
+        required: ['name', 'location', 'city', 'capacity'],
 
         properties: {
             id: { type: 'number' },
@@ -33,6 +34,14 @@ export default class Garage extends Model {
                     to: 'maintenance.garage_id',
                 },
             },
+            cars: {
+                relation: Model.HasManyRelation,
+                modelClass: CarGarageEntry,
+                join: {
+                    from: 'garage.id',
+                    to: 'car_garage_entry.garage_id',
+                },
+            }
         };
     }
 }
